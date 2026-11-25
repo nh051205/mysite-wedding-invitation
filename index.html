@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<!--
+  ============================================================
+  [이 파일의 전체 구조 한눈에 보기]
+  ============================================================
+  <head>   : 문서 설정, 구글 폰트, style.css 연결
+  <body>
+    0. 봉투 인트로 (section.envelope)   ← 첫 화면, 나중에 JS로 열림
+    └ div.card (청첩장 본문을 감싸는 좁은 폭 래퍼)
+        1. 고정 헤더 (header.header)    ← 로고 + 메뉴 + 햄버거
+        2. main
+           ① 히어로 (#hero)             ← 사진 슬라이드, 이름, 날짜
+           ② 인사말 (#greeting)
+           ③ D-Day (#dday)
+           ④ 갤러리 (#gallery)          ← 클릭하면 확대 모달
+           ⑤ 예식 정보 (#info)
+           ⑥ 마음 전하실 곳 (#account)  ← 아코디언
+           ⑦ 참석 여부 (#rsvp)          ← 폼
+           ⑧ 축하 메시지 (#messages)
+        3. 푸터 (footer)
+    모달 (div.modal)                    ← 갤러리 확대용
+  </body>
+
+
+<html lang="ko"> <! -- lang="ko": 이 문서가 한국어라고 브라우저에 알려줘요 (A1 접근성) -->
+<head>
+  <meta charset="UTF-8"> <!-- 한글이 깨지지 않게 하는 설정 -->
+  <!-- viewport: 이게 없으면 모바일에서 화면이 PC처럼 작게 보여요 (L3 반응형 필수) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>김철수 ♡ 정영희 결혼합니다</title> <!-- 브라우저 탭에 보이는 제목 -->
+
+  <!-- Google Fonts: 제목용 세리프(Noto Serif KR) + 본문용 산세리프(Noto Sans KR) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&family=Noto+Serif+KR:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+  
+  
+<link rel="stylesheet" href="style.css">
+</head>
+
+<!-- id="top": 푸터의 "맨 위로" 링크(href="#top")가 이 위치로 이동해요 -->
+<body id="top">
+
+  <!-- ========================================================
+       0. 봉투 인트로
+       - 화면 전체를 덮는 첫 장면이에요 (CSS에서 position: fixed 예정)
+       - 나중에 JS가 클래스를 붙여서 열리게 만들어요:
+           envelope--open : 실링 왁스를 누르면 붙음 → 봉투가 열리는 모션 시작
+           envelope--done : 모션이 끝나면 붙음 → 봉투가 사라지고 본문이 보임 (setTimeout, U4)
+       - 아래층 → 위층 순서로 겹쳐질 예정이라 코드 순서를 바꾸지 마세요.
+       ======================================================== -->
+  <section class="envelope" aria-label="청첩장 봉투">
+    <div class="envelope__wrap">
+
+      <!-- 1) 봉투 속 편지지: 봉투가 열리면 위로 올라와요 -->
+      <div class="envelope__letter">
+        <p class="envelope__letter-title">초대합니다</p>
+        <p class="envelope__letter-names">김철수 · 정영희</p>
+      </div>
+
+      <!-- 2) 열린 봉투 이미지: 처음엔 투명(CSS), 열릴 때 나타남. 장식용이라 alt="" -->
+      <img class="envelope__img envelope__img--open" src="open.png" alt="">
+
+      <!-- 3) 닫힌 봉투 이미지: 처음 보이는 봉투. 열리면 사라짐 -->
+      <img class="envelope__img envelope__img--closed" src="reclose.png" alt="버건디 색 청첩장 봉투">
+
+      <!-- 4) 하얀 실링 왁스 버튼: 누르면 봉투가 열려요 (나중에 JS)
+           <button>이라서 Tab 키 + Enter 키로도 누를 수 있어요 (A3) -->
+      <button class="envelope__seal" type="button" aria-label="봉투 열기">
+        <!-- 실링 왁스 사진. src의 파일 이름만 내 파일에 맞게 바꾸세요.
+             버튼에 aria-label이 있어서 이미지의 alt는 비워 둬요 (스크린리더가 두 번 읽지 않게) -->
+        <img class="envelope__seal-img" src="wax.png" alt="">
+      </button>
+
+      <!-- 5) 안내 문구: CSS에서 깜빡이는 효과를 줄 예정 -->
+      <p class="envelope__hint">봉투를 눌러 열어보세요</p>
+    </div>
+  </section>
+
+
+  <!-- ========================================================
+       청첩장 본문 래퍼 (.card)
+       - CSS에서 max-width: 430px; margin: 0 auto; 로
+         데스크톱에서도 모바일 비율의 좁은 폭으로 가운데에 보이게 할 예정
+       ======================================================== -->
+  <div class="card">
+
+    <!-- ======================================================
+         1. 고정 헤더 (L4: position: sticky; top: 0 예정)
+         - 로고(왼쪽) + 메뉴(오른쪽)를 Flexbox로 양끝 정렬 예정 (L1)
+         ====================================================== -->
+    <header class="header">
+      <a class="header__logo" href="#top">Wedding Invitation</a> 
+
+      <!-- 햄버거 버튼: 모바일에서만 보임. JS가 aria-expanded를 true/false로 바꿔요 (U3) -->
+      <button class="hamburger" type="button" aria-label="메뉴 열기" aria-expanded="false" aria-controls="main-nav">
+        <span class="hamburger__line"></span>
+        <span class="hamburger__line"></span>
+        <span class="hamburger__line"></span>
+      </button>
+
+      <!-- 앵커 메뉴: href="#아이디" → 아래 섹션의 id로 부드럽게 이동 -->
+      <nav class="nav" id="main-nav" aria-label="청첩장 메뉴">
+        <ul class="nav__list">
+          <li class="nav__item"><a class="nav__link" href="#greeting">인사말</a></li>
+          <li class="nav__item"><a class="nav__link" href="#gallery">갤러리</a></li>
+          <li class="nav__item"><a class="nav__link" href="#info">예식 안내</a></li>
+          <li class="nav__item"><a class="nav__link" href="#account">마음 전하실 곳</a></li>
+          <li class="nav__item"><a class="nav__link" href="#rsvp">참석 여부</a></li>
+          <li class="nav__item"><a class="nav__link" href="#messages">축하 메시지</a></li>
+        </ul>
+      </nav>
+    </header>
+
+    <!-- main: 페이지의 핵심 내용 영역 (A1 시맨틱 태그) -->
+    <main class="main">
+
+      <!-- ====================================================
+           ① 히어로: 첫인상 영역
+           ==================================================== -->
+            <!-- ====================================================
+           ① 히어로: 화면에 꽉 차는 사진 한 장 + 흰색 날짜 글씨
+           - 사진 한 장만 써요. 나머지 사진은 아래 갤러리에 넣어요.
+           - 사진을 바꾸려면 src 경로와 alt 설명만 고치면 돼요.
+           ==================================================== -->
+      <section class="hero" id="hero" aria-label="메인 사진과 예식 날짜">
+        <figure class="hero__photo">
+          <img class="hero__img" src="Gemini_wedding3.png" alt="계단에서 서로 마주보는 두사람의 흑백 사진">
+        </figure>
+       <div class="hero__bigdate" aria-hidden="true">
+        <span class="line-1">our</span>
+        <span class="line-2">happily</span>
+        <span class="line-3">ever</span>
+        <span class="line-4">after</span>
+      </div>
+        <!-- 사진 위에 올라가는 글씨 (CSS에서 가운데보다 살짝 아래에 배치) -->
+        <div class="hero__overlay">
+          <!-- h1은 페이지에 한 번만 필요해서 남겨 뒀어요 (A2). 화면에는 안 보이고 스크린리더만 읽어요 -->
+          <h1 class="hero__title">김철수 &amp; 정영희</h1>
+          <p class="hero__date">
+            <time datetime="2027-10-16T14:00">
+              <span class="hero__names"> 철수 &amp; 영희</span>
+              <span class="hero__time">10월 16일 토요일 오후 2시</span>
+            </time>
+          </p>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           ② 인사말
+           ==================================================== -->
+      <section class="greeting" id="greeting">
+        <h2 class="section-title">INVITATION</h2>
+        <!-- 인사말 문구는 마음대로 고쳐도 돼요. <br>은 줄바꿈이에요 -->
+        <p class="greeting__text">
+          소중한 분들을 초대합니다,<br>
+          따스한 가을날, 서로의 손을 꼭 잡고<br>
+          평생의 길을 함께 걸어가려 합니다.<br>
+          귀한 걸음하시어 함께해 주신다면<br>
+          더없는 기쁨으로 간직하겠습니다.
+        </p>
+        <!-- address: 사람/연락처 정보를 나타내는 시맨틱 태그. 여기서는 가족 소개용 -->
+        <address class="greeting__family">
+          <p class="greeting__parents"><span>김OO · 유OO</span>의 아들 <strong class="greeting__name">철수</strong></p>
+          <p class="greeting__parents"><span>정OO · 이OO</span>의 딸 <strong class="greeting__name">영희</strong></p>
+        </address>
+      </section>
+
+      <!-- ====================================================
+           ③ D-Day 카운트다운
+           - data-date: 목표 날짜. JS가 이 값을 읽어서 남은 시간을 계산해요 (U5 setInterval)
+           - 4칸은 CSS Grid로 만들 예정 (L2)
+           ==================================================== -->
+      <section class="dday" id="dday">
+        <h2 class="section-title">COUNTDOWN TO OUR WEDDING</h2>
+        <div class="dday__grid" data-date="2027-10-16T14:00:00">
+          <div class="dday__cell">
+            <span class="dday__num" id="dday-days">0</span>
+            <span class="dday__label">일</span>
+          </div>
+          <div class="dday__cell">
+            <span class="dday__num" id="dday-hours">0</span>
+            <span class="dday__label">시간</span>
+          </div>
+          <div class="dday__cell">
+            <span class="dday__num" id="dday-minutes">0</span>
+            <span class="dday__label">분</span>
+          </div>
+          <div class="dday__cell">
+            <span class="dday__num" id="dday-seconds">0</span>
+            <span class="dday__label">초</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           ④ 갤러리 (3열 Grid → 2열 → 1열, L2 / L3)
+           - 사진을 <button>으로 감싸서 마우스뿐 아니라 키보드로도 누를 수 있어요 (A3)
+           - data-full: 확대 모달에서 보여줄 큰 사진 경로 (JS가 읽어요)
+           - loading="lazy": 화면에 가까워질 때 사진을 불러와서 페이지가 빨라져요
+           ==================================================== -->
+      <section class="gallery" id="gallery">
+         <h2 class="section-title">GALLERY</h2>
+         <div class="slider">
+          <!-- 큰 사진 (자동으로 넘어가요) -->
+          <div class="slider__main">
+            <img class="slider__slide slider__slide--active" src="GPTwedding1.png" alt="가을 햇살 아래 웃고 있는 두 사람">
+            <img class="slider__slide" src="GPTwedding2.png" alt="풀숲에서 마주보는 두 사람">
+            <img class="slider__slide" src="GPTwedding3.png" alt="풀숲에서 백허그를 하는 두 사람">
+            <img class="slider__slide" src="Gemini_wedding1.png" alt="계단에서 마주보는 두사람">
+            <img class="slider__slide" src="Gemini_wedding3.png" alt="계단에서 마주보는 두사람의 흑백 사진">
+            <img class="slider__slide" src="Gemini_wedding2.png" alt="계단에서 서로 바주보는 두 사람">
+            <button class="slider__toggle" type="button" aria-label="자동 넘김 멈춤">멈춤</button>
+          </div>
+
+          <!-- 작은 사진들 (누르면 큰 사진이 바뀌어요) -->
+          <div class="slider__thumbs">
+            <button class="slider__thumb slider__thumb--active" type="button" aria-label="첫 번째 사진 보기"><img src="GPTwedding1.png" alt=""></button>
+            <button class="slider__thumb" type="button" aria-label="두 번째 사진 보기"><img src="GPTwedding2.png" alt=""></button>
+            <button class="slider__thumb" type="button" aria-label="세 번째 사진 보기"><img src="GPTwedding3.png" alt=""></button>
+            <button class="slider__thumb" type="button" aria-label="네 번째 사진 보기"><img src="Gemini_wedding1.png" alt=""></button>
+            <button class="slider__thumb" type="button" aria-label="다섯 번째 사진 보기"><img src="Gemini_wedding3.png" alt=""></button>
+            <button class="slider__thumb" type="button" aria-label="여섯 번째 사진 보기"><img src="Gemini_wedding2.png" alt=""></button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           ⑤ 예식 정보
+           - dl(설명 목록): dt = 항목 이름, dd = 내용
+           ==================================================== -->
+      <section class="info" id="info">
+        <h2 class="section-title">INFORMATION</h2>
+        <dl class="info__list">
+          <div class="info__row">
+            <dt class="info__term">일시</dt>
+            <dd class="info__desc"><time datetime="2027-10-16T14:00">2027년 10월 16일 토요일 오후 2시</time></dd>
+          </div>
+          <div class="info__row">
+            <dt class="info__term">장소</dt>
+            <dd class="info__desc">
+              <address class="info__address">
+                축결혼 웨딩홀<br>
+                대구광역시 결혼구 축하동 123번지
+              </address>
+            </dd>
+          </div>
+          <div class="info__row">
+            <dt class="info__term">지하철</dt>
+            <dd class="info__desc">결혼역 1번 출구에서 도보 5분</dd>
+          </div>
+          <div class="info__row">
+            <dt class="info__term">버스</dt>
+            <dd class="info__desc">축하동 정류장 하차 (예시: 101, 202번)</dd>
+          </div>
+          <div class="info__row">
+            <dt class="info__term">주차</dt>
+            <dd class="info__desc">웨딩홀 지하 주차장 이용 (2시간 무료)</dd>
+          </div>
+        </dl>
+
+  
+        <!-- 주소를 바꾸려면 src 안의 q= 뒤 글자만 고치세요 (띄어쓰기는 + 로 써요) -->
+     <div class="map">
+      <iframe
+      class="map__frame"
+      src="https://maps.google.com/maps?q=대구+북구+중앙대로+581&z=17&output=embed"
+      title="예식장 위치 지도 (대구 북구 중앙대로 581)"
+      loading="lazy"
+      allowfullscreen
+      referrerpolicy="no-referrer-when-downgrade"></iframe> </div>
+
+        <!-- 길찾기 링크: target="_blank"는 새 탭, rel="noopener"는 보안을 위한 설정 -->
+        <a class="button" href="https://naver.me/5o0NY705" target="_blank" rel="noopener">길찾기</a>
+      </section>
+
+      <!-- ====================================================
+           ⑥ 마음 전하실 곳 (아코디언, U3 classList.toggle)
+           - 버튼을 누르면 JS가 aria-expanded 값과 panel--open 클래스를 토글해요
+           - aria-controls의 값은 아래 패널의 id와 반드시 같아야 해요
+           ==================================================== -->
+      <section class="account" id="account">
+        <h2 class="section-title">ACCOUNT</h2>
+        <p class="account__intro">참석이 어려우신 분들을 위해 계좌번호를 안내드립니다.</p>
+
+        <!-- 신랑측 -->
+        <div class="accordion">
+          <button class="accordion__trigger" type="button" aria-expanded="false" aria-controls="panel-groom">신랑측 계좌번호</button>
+          <div class="accordion__panel" id="panel-groom">
+            <p class="accordion__bank">가상은행 000-00-000000</p>
+            <p class="accordion__holder">예금주 김OO</p>
+            <!-- data-account: 복사할 계좌번호 (JS가 읽어서 클립보드에 복사) -->
+            <button class="accordion__copy" type="button" data-account="000-00-000000">복사</button>
+            <!-- aria-live="polite": 복사 완료 문구가 바뀌면 스크린리더가 읽어줘요 -->
+            <span class="accordion__message" aria-live="polite"></span>
+          </div>
+        </div>
+
+        <!-- 신부측 -->
+        <div class="accordion">
+          <button class="accordion__trigger" type="button" aria-expanded="false" aria-controls="panel-bride">신부측 계좌번호</button>
+          <div class="accordion__panel" id="panel-bride">
+            <p class="accordion__bank">가상은행 111-11-111111</p>
+            <p class="accordion__holder">예금주 정OO</p>
+            <button class="accordion__copy" type="button" data-account="111-11-111111">복사</button>
+            <span class="accordion__message" aria-live="polite"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================
+           ⑦ 참석 여부 폼 (U7 유효성 검사)
+           - novalidate: 브라우저 기본 경고창을 끄고, JS로 직접 만든 경고 문구를 쓰기 위한 설정
+           - label의 for 값 = input의 id 값 → 연결되어야 라벨을 눌러도 입력창이 선택돼요
+           - form__error: 비어 있다가 JS가 "이름을 입력해 주세요" 같은 문구를 채워요
+           ==================================================== -->
+      <section class="rsvp" id="rsvp">
+        <h2 class="section-title">RSVP<br>(참석 여부)</h2>
+        <p class="rsvp__intro">원활한 준비를 위해 참석 여부를 알려주세요.</p>
+
+        <form class="form" id="rsvp-form" novalidate>
+          <!-- 이름 -->
+          <div class="form__group">
+            <label class="form__label" for="rsvp-name">이름</label>
+            <input class="form__input" type="text" id="rsvp-name" name="name" placeholder="성함을 입력해 주세요" required>
+            <p class="form__error" role="alert"></p>
+          </div>
+
+          <!-- 참석 여부: radio는 묶어서 fieldset + legend를 써야 해요 -->
+          <fieldset class="form__group form__fieldset">
+            <legend class="form__label">참석 여부</legend>
+            <div class="form__radios">
+              <label class="form__radio" for="rsvp-yes">
+                <input type="radio" id="rsvp-yes" name="attend" value="yes" required> 참석할게요
+              </label>
+              <label class="form__radio" for="rsvp-no">
+                <input type="radio" id="rsvp-no" name="attend" value="no"> 아쉽지만 어려워요
+              </label>
+            </div>
+            <p class="form__error" role="alert"></p>
+          </fieldset>
+
+          <!-- 동행 인원 -->
+          <div class="form__group">
+            <label class="form__label" for="rsvp-guests">동행 인원 (본인 포함)</label>
+            <select class="form__select" id="rsvp-guests" name="guests">
+              <option value="1">1명</option>
+              <option value="2">2명</option>
+              <option value="3">3명</option>
+              <option value="4">4명</option>
+            </select>
+            <p class="form__error" role="alert"></p>
+          </div>
+
+          <!-- 식사 여부 -->
+          <div class="form__group">
+            <label class="form__checkbox" for="rsvp-meal">
+              <input type="checkbox" id="rsvp-meal" name="meal" value="yes"> 식사에 참석할게요
+            </label>
+            <p class="form__error" role="alert"></p>
+          </div>
+
+          <button class="button" type="submit">참석 의사 전하기</button>
+          <!-- 제출이 잘 되면 JS가 "감사합니다" 같은 문구를 여기에 채워요 -->
+          <p class="form__result" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <!-- ====================================================
+           ⑧ 축하 메시지
+           - 지금은 HTML에 직접 쓴 샘플 3개예요.
+           - 나중에 data.json을 fetch()로 불러와서, 아래 <li>와 같은 구조를
+             반복문으로 만들어 이 <ul> 안에 채울 예정이에요 (D1~D4)
+           - 불러오기에 실패하면 messages__error의 hidden을 풀고 안내 문구를 보여줘요 (D5)
+           ==================================================== -->
+      <section class="messages" id="messages">
+        <h2 class="section-title">GUESTBOOK</h2>
+          <!-- 새로 넣는 문구: class를 붙여야 CSS에서 찾을 수 있어요 -->
+          <h3 class="messages__intro">신랑 신부의 결혼을 축하해주세요.</h3>
+
+
+        <ul class="messages__list">
+          <li class="messages__item">
+            <h3 class="messages__name">박OO</h3>
+            <p class="messages__text">두 사람의 새로운 시작을 진심으로 축하해요. 늘 행복하세요!</p>
+            <time class="messages__date" datetime="2027-09-20">2027.09.20</time>
+          </li>
+          <li class="messages__item">
+            <h3 class="messages__name">이OO</h3>
+            <p class="messages__text">가을처럼 따뜻한 결혼식이 되길 바랍니다. 결혼 축하해요!</p>
+            <time class="messages__date" datetime="2027-09-22">2027.09.22</time>
+          </li>
+          <li class="messages__item">
+            <h3 class="messages__name">최OO</h3>
+            <p class="messages__text">서로에게 가장 좋은 친구로 오래오래 함께하길 응원합니다.</p>
+            <time class="messages__date" datetime="2027-09-25">2027.09.25</time>
+          </li>
+        </ul>
+        <!-- hidden 속성: 평소에는 숨겨져 있어요. 오류가 났을 때만 JS가 보여줘요 -->
+        <p class="messages__error" hidden></p>
+      </section>
+
+    </main>
+
+    <!-- ======================================================
+         3. 푸터
+         ====================================================== -->
+    <footer class="footer">
+      <p class="footer__text">함께해 주셔서 감사합니다.</p>
+      <small class="footer__copy">© 2027 K &amp; J Wedding Invitation</small>
+      <!-- href="#top": 위에서 만든 <body id="top">으로 이동 -->
+      <a class="footer__top" href="#top">맨 위로</a>
+    </footer>
+
+  </div><!-- /.card -->
+
+  <!-- ========================================================
+       갤러리 확대 모달
+       - 평소에는 CSS에서 display: none
+       - 사진을 누르면 JS가 modal--open 클래스를 붙여서 보이게 해요
+       - role="dialog" aria-modal="true": 스크린리더에게 "팝업창이에요"라고 알려줘요
+       ======================================================== -->
+    <!-- ========================================================
+       갤러리 확대 모달
+       - 평소에는 CSS에서 숨겨져 있고, 사진을 누르면 JS가 modal--open 클래스를 붙여 보이게 해요
+       - src는 처음엔 비워두고, 사진을 누를 때 JS가 data-full 값을 넣어요
+       ======================================================== -->
+  <div class="modal" role="dialog" aria-modal="true" aria-label="사진 확대">
+    <button class="modal__close" type="button" aria-label="닫기">&times;</button>
+    <button class="modal__nav modal__nav--prev" type="button" aria-label="이전 사진">&lsaquo;</button>
+    <button class="modal__nav modal__nav--next" type="button" aria-label="다음 사진">&rsaquo;</button>
+    <p class="modal__count" aria-live="polite"></p>
+    <img class="modal__img" src="" alt="">
+  </div>
+
+  <!-- 나중에 만들 JS 파일 연결. defer: HTML을 다 읽은 뒤에 실행해요 -->
+  <script src="script.js" defer></script>
+</body>
+
+<!--
+  ============================================================
+  [나중에 CSS/JS에서 사용할 class / id / data- 속성 목록]
+  ============================================================
+
+  ■ 봉투 인트로
+    class : envelope, envelope__wrap, envelope__letter, envelope__letter-title,
+            envelope__letter-names, envelope__img, envelope__img--open,
+            envelope__img--closed, envelope__seal, envelope__swan,
+            envelope__swan-left, envelope__swan-right, envelope__hint
+    JS가 붙일 상태 클래스 : envelope--open, envelope--done
+
+  ■ 헤더/메뉴
+    class : header, header__logo, hamburger, hamburger__line,
+            nav, nav__list, nav__item, nav__link
+    id    : main-nav
+    JS가 붙일 상태 클래스 : nav--open (햄버거 메뉴 열림)
+
+  ■ 히어로
+    id    : hero
+    class : hero__slides, slide, slide__img, hero__controls, hero__toggle,
+            hero__dots, hero__dot, hero__title, hero__amp, hero__date
+    상태 클래스 : slide--active, hero__dot--active
+
+  ■ 인사말
+    id    : greeting
+    class : section-title, greeting__text, greeting__family,
+            greeting__parents, greeting__name
+
+  ■ D-Day
+    id    : dday, dday-days, dday-hours, dday-minutes, dday-seconds
+    class : dday__grid, dday__cell, dday__num, dday__label
+    data  : data-date="2027-10-16T14:00:00"
+
+  ■ 갤러리 / 모달
+    id    : gallery
+    class : gallery__grid, gallery__figure, gallery__item, gallery__img,
+            modal, modal__close, modal__img
+    data  : data-full="photos/gallery1.jpg"
+    상태 클래스 : modal--open
+
+  ■ 예식 정보
+    id    : info
+    class : info__list, info__row, info__term, info__desc, info__address,
+            map-placeholder, button
+
+  ■ 마음 전하실 곳
+    id    : account, panel-groom, panel-bride
+    class : account__intro, accordion, accordion__trigger, accordion__panel,
+            accordion__bank, accordion__holder, accordion__copy, accordion__message
+    data  : data-account="계좌번호"
+    속성  : aria-expanded, aria-controls
+    상태 클래스 : accordion__panel--open
+
+  ■ 참석 여부 폼
+    id    : rsvp, rsvp-form, rsvp-name, rsvp-yes, rsvp-no, rsvp-guests, rsvp-meal
+    class : rsvp__intro, form, form__group, form__label, form__input,
+            form__select, form__fieldset, form__radios, form__radio,
+            form__checkbox, form__error, form__result
+    상태 클래스 : form__input--error (오류가 있는 입력창)
+
+  ■ 축하 메시지
+    id    : messages
+    class : messages__list, messages__item, messages__name, messages__text,
+            messages__date, messages__error
+
+  ■ 푸터
+    class : footer, footer__text, footer__copy, footer__top
+  ============================================================
+-->
+</html>
